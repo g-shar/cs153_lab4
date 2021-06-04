@@ -34,6 +34,7 @@ int shm_open(int id, char **pointer) {
   acquire(&(shm_table.lock));
   int i;
   int emptySlot = 0;
+  int foundId = 0;
   char *mem;
   uint va = PGROUNDUP(myproc()->sz);
 
@@ -48,12 +49,13 @@ int shm_open(int id, char **pointer) {
       mappages(myproc()->pgdir, (void*) va, PGSIZE, V2P(shm_table.shm_pages[i].frame), PTE_W|PTE_U);
       shm_table.shm_pages[i].refcnt += 1;
       //cprintf("exiting shm_open\n");
+      foundId = 1;
       break;
     }
   }
 
   //shared memory segment does not exist
-  if (emptySlot) {
+  if (emptySlot && !foundId) {
     shm_table.shm_pages[emptySlot].id = id;
     if((mem = kalloc()) == 0)
       return 0;
