@@ -10,39 +10,45 @@ struct shm_cnt {
 
 int main(int argc, char *argv[])
 {
-int pid;
-int i=0;
-struct shm_cnt *counter;
-  pid=fork();
+  int pid;
+  int i = 0;
+  struct shm_cnt *counter;
+  pid = fork();
   sleep(1);
 
-//shm_open: first process will create the page, the second will just attach to the same page
-//we get the virtual address of the page returned into counter
-//which we can now use but will be shared between the two processes
-  
-shm_open(1,(char **)&counter);
- 
-//  printf(1,"%s returned successfully from shm_open with counter %x\n", pid? "Child": "Parent", counter); 
+  //shm_open: first process will create the page, the second will just attach to the same page
+  //we get the virtual address of the page returned into counter
+  //which we can now use but will be shared between the two processes
+  shm_open(1,(char **)&counter);
+  //printf(1, "cnt: %p\n", counter->cnt);
+
+  printf(1,"%s returned successfully from shm_open with counter %x\n", pid? "Child": "Parent", counter); 
+  counter->cnt = 0;
+  counter->lock.locked = 0;
   for(i = 0; i < 10000; i++)
-    {
-     uacquire(&(counter->lock));
-     counter->cnt++;
-     urelease(&(counter->lock));
+  {
+    //printf(1, "here: %d\n", i);
+    uacquire(&(counter->lock));
+    //printf(1,"%s %d\n", pid? "Child": "Parent", i); 
+    counter->cnt++;
+    urelease(&(counter->lock));
 
-//print something because we are curious and to give a chance to switch process
-     if(i%1000 == 0)
-       printf(1,"Counter in %s is %d at address %x\n",pid? "Parent" : "Child", counter->cnt, counter);
-}
-  
+    //print something because we are curious and to give a chance to switch process
+    if(i % 1000 == 0) {
+      printf(1,"Counter in %s is %d at address %x\n",pid? "Child": "Parent", counter->cnt, counter);
+    }
+  }
+    
   if(pid)
-     {
-       printf(1,"Counter in parent is %d\n",counter->cnt);
+  {
+    printf(1,"Counter in parent is %d\n",counter->cnt);
     wait();
-    } else
+  } else {
     printf(1,"Counter in child is %d\n\n",counter->cnt);
+  }
 
-//shm_close: first process will just detach, next one will free up the shm_table entry (but for now not the page)
-   shm_close(1);
-   exit();
-   return 0;
+  //shm_close: first process will just detach, next one will free up the shm_table entry (but for now not the page)
+  shm_close(1);
+  exit();
+  return 0;
 }
