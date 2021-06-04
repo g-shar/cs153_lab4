@@ -20,16 +20,11 @@ int main(int argc, char *argv[])
   //we get the virtual address of the page returned into counter
   //which we can now use but will be shared between the two processes
   shm_open(1,(char **)&counter);
-  //printf(1, "cnt: %p\n", counter->cnt);
 
-  printf(1,"%s returned successfully from shm_open with counter %x\n", pid? "Child": "Parent", counter); 
-  counter->cnt = 0;
-  counter->lock.locked = 0;
+  //printf(1,"%s returned successfully from shm_open with counter %x\n", pid? "Child": "Parent", counter); 
   for(i = 0; i < 10000; i++)
   {
-    //printf(1, "here: %d\n", i);
     uacquire(&(counter->lock));
-    //printf(1,"%s %d\n", pid? "Child": "Parent", i); 
     counter->cnt++;
     urelease(&(counter->lock));
 
@@ -44,7 +39,7 @@ int main(int argc, char *argv[])
     printf(1,"Counter in parent is %d\n",counter->cnt);
     wait();
   } else {
-    printf(1,"Counter in child is %d\n\n",counter->cnt);
+    printf(1,"Counter in child is %d\n",counter->cnt);
   }
 
   //shm_close: first process will just detach, next one will free up the shm_table entry (but for now not the page)
